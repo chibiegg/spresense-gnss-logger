@@ -1,0 +1,26 @@
+
+config GNSSLOGGER_LOGGER
+	bool "Logger Application"
+	default n
+	---help---
+		Enable the logger app
+
+if GNSSLOGGER_LOGGER
+
+config GNSSLOGGER_LOGGER_PROGNAME
+	string "Program name"
+	default "logger"
+	depends on BUILD_KERNEL
+	---help---
+		This is the name of the program that will be use when the NSH ELF
+		program is installed.
+
+config GNSSLOGGER_LOGGER_PRIORITY
+	int "logger task priority"
+	default 100
+
+config GNSSLOGGER_LOGGER_STACKSIZE
+	int "logger stack size"
+	default 2048
+
+endif
