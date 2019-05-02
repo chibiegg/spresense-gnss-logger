@@ -1,5 +1,6 @@
 #include <sdk/config.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <arch/chip/gnss.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -7,10 +8,19 @@
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <mqueue.h>
+#include <string.h>
+#include <arch/board/board.h>
+#include <arch/chip/pin.h>
 #include "gpsutils/cxd56_gnss_nmea.h"
 #include "gnss.h"
+#include "log.h"
 
 #define MY_GNSS_SIG 18
+#define LED_0 PIN_I2S1_DATA_OUT
+#define LED_1 PIN_I2S1_DATA_IN
+#define LED_2 PIN_I2S1_LRCK
+#define LED_3 PIN_I2S1_BCK
 
 // GNSS
 int gnss_fd;
@@ -18,31 +28,32 @@ static struct cxd56_gnss_positiondata_s posdat;
 static int gnss_setparams(int fd);
 static int gnss_read(int fd);
 
-
-// NMEA
-char nmea_buf[NMEA_SENTENCE_MAX_LEN];
-FAR static char *reqbuf(uint16_t size);
-static void freebuf(FAR char *buf);
-static int outnmea(FAR char *buf);
-static int outbin(FAR char *buf, uint32_t len);
-
-
 void gnss_init(){
-  NMEA_OUTPUT_CB funcs;
-  struct cxd56_gnss_signal_setting_s setting;
-
-  NMEA_InitMask();
-  NMEA_SetMask(0x000040ff);
-  funcs.bufReq  = reqbuf;
-  funcs.out     = outnmea;
-  funcs.outBin  = outbin;
-  funcs.bufFree = freebuf;
-  NMEA_RegistOutputFunc(&funcs);
-
   gnss_fd = open("/dev/gps", O_RDONLY);
   if (gnss_fd < 0)
   {
     printf("open error:%d,%d\n", gnss_fd, errno);
+    return;
+  }
+
+  ioctl(gnss_fd, CXD56_GNSS_IOCTL_STOP, 0);
+
+  board_gpio_config(LED_0, 0, false, true, 0);
+  board_gpio_config(LED_1, 0, false, true, 0);
+  board_gpio_config(LED_2, 0, false, true, 0);
+  board_gpio_config(LED_3, 0, false, true, 0);
+
+  log_init();
+}
+
+void gnss_loop(){
+  int ret;
+  sigset_t mask;
+  struct cxd56_gnss_signal_setting_s setting;
+
+
+  ret = gnss_setparams(gnss_fd);
+  if (ret<0) {
     return;
   }
 
@@ -52,17 +63,12 @@ void gnss_init(){
   setting.gnsssig = CXD56_GNSS_SIG_GNSS;
   setting.signo   = MY_GNSS_SIG;
   setting.data    = NULL;
-  ioctl(gnss_fd, CXD56_GNSS_IOCTL_SIGNAL_SET, (unsigned long)&setting);
-
-  gnss_setparams(gnss_fd);
-
-  /* Start GNSS. */
-  ioctl(gnss_fd, CXD56_GNSS_IOCTL_START, CXD56_GNSS_STMOD_HOT);
-}
-
-void gnss_loop(){
-  int ret;
-  sigset_t mask;
+  ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_SIGNAL_SET, (unsigned long)&setting);
+  if (ret < 0)
+  {
+    printf("ioctl(CXD56_GNSS_IOCTL_SIGNAL_SET) NG!! %d\n", ret);
+    return;
+  }
 
   sigemptyset(&mask);
   sigaddset(&mask, MY_GNSS_SIG);
@@ -76,7 +82,19 @@ void gnss_loop(){
       break;
     }
 
-    gnss_read(gnss_fd);
+    if (gnss_read(gnss_fd) == 0){
+      log_write(&posdat);
+      board_gpio_write(LED_0, 1);
+      usleep(1000*20);
+      board_gpio_write(LED_0, 0);
+      if (posdat.receiver.pos_fixmode > 1){
+        board_gpio_write(LED_1, 1);
+      }else{
+        board_gpio_write(LED_1, 0);
+      }
+    }else{
+
+    }
   }
 }
 
@@ -96,18 +114,25 @@ static int gnss_setparams(int fd)
   ret = ioctl(fd, CXD56_GNSS_IOCTL_SET_OPE_MODE, (uint32_t)&set_opemode);
   if (ret < 0)
   {
-    printf("ioctl(CXD56_GNSS_IOCTL_SET_OPE_MODE) NG!!\n");
+    printf("ioctl(CXD56_GNSS_IOCTL_SET_OPE_MODE) NG!! %d\n", ret);
     return ret;
   }
 
   /* Set the type of satellite system used by GNSS. */
-
   set_satellite = CXD56_GNSS_SAT_GPS | CXD56_GNSS_SAT_SBAS | CXD56_GNSS_SAT_QZ_L1CA | CXD56_GNSS_SAT_QZ_L1S;
 
   ret = ioctl(fd, CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM, set_satellite);
   if (ret < 0)
   {
-    printf("ioctl(CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM) NG!!\n");
+    printf("ioctl(CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM) NG!! %d\n", ret);
+    return ret;
+  }
+
+  /* Start GNSS. */
+  ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_START, CXD56_GNSS_STMOD_COLD);
+  if (ret < 0)
+  {
+    printf("ioctl(CXD56_GNSS_IOCTL_START) NG!! %d\n", ret);
     return ret;
   }
 
@@ -130,34 +155,5 @@ static int gnss_read(int fd){
     return -1;
   }
 
-  NMEA_Output(&posdat);
   return 0;
-}
-
-/* output NMEA */
-
-
-FAR static char *reqbuf(uint16_t size)
-{
-  if (size > sizeof(nmea_buf))
-    {
-      printf("reqbuf error: oversize %s\n", size);
-      return NULL;
-    }
-  return nmea_buf;
-}
-
-static void freebuf(FAR char *buf)
-{
-}
-
-static int outnmea(FAR char *buf)
-{
-  return printf("%s", buf);
-}
-
-static int outbin(FAR char *buf, uint32_t len)
-{
-  return len;
-  //return write(WRITE_FD, buf, (size_t)len);
 }
