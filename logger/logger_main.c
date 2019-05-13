@@ -37,6 +37,9 @@ int logger_entry(int argc, char *argv[])
   /* Initialize  */
   int ret = boardctl(BOARDIOC_INIT, 0);
 
+  /* Wait HW initialization done. */
+  sleep(2);
+
   if (ret == OK)
     {
       /* Call main function */
