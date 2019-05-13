@@ -2,6 +2,9 @@
 
 void setup()
 {
+  /* Wait HW initialization done. */
+  sleep(2);
+
   gnss_init();
 }
 
