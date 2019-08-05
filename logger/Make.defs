@@ -1,4 +1,2 @@
-
-ifeq ($(CONFIG_GNSSLOGGER_LOGGER),y)
 CONFIGURED_APPS += logger
-endif
+

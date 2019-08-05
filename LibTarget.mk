@@ -33,10 +33,10 @@
 #
 ############################################################################
 
-$(SDKDIR)$(DELIM)..$(DELIM)gnsslogger$(DELIM)libgnsslogger$(LIBEXT): context
+$(SPRESENSE_HOME)$(DELIM)libuserapps$(LIBEXT): context
 	$(Q) $(MAKE) -C $(dir $@) TOPDIR="$(TOPDIR)" SDKDIR="$(SDKDIR)" $(notdir $@)
 
-lib$(DELIM)libgnsslogger$(LIBEXT): $(SDKDIR)$(DELIM)..$(DELIM)gnsslogger$(DELIM)libgnsslogger$(LIBEXT)
+lib$(DELIM)libuserapps$(LIBEXT): $(SPRESENSE_HOME)$(DELIM)libuserapps$(LIBEXT)
 	$(Q) install $< $@
 
-EXTLIBS += lib$(DELIM)libgnsslogger$(LIBEXT)
+EXTLIBS += lib$(DELIM)libuserapps$(LIBEXT)

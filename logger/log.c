@@ -2,6 +2,7 @@
 #include <arch/chip/gnss.h>
 #include "gpsutils/cxd56_gnss_nmea.h"
 #include "log.h"
+#include "led.h"
 
 NMEA_OUTPUT_CB funcs;
 FILE *fp = NULL;
@@ -54,14 +55,17 @@ void log_write(struct cxd56_gnss_positiondata_s *posdatp){
   NMEA_Output(posdatp);
   if (fp!=NULL) {
     if(posdatp->receiver.time.sec == 59){
+      led_write(LED_3, 1);
       fflush(fp);
       int fd = fileno(fp);
       fsync(fd);
     }
     if(posdatp->receiver.time.minute == 59 && posdatp->receiver.time.sec == 59){
+      led_write(LED_3, 1);
       fclose(fp);
       fp = NULL;
     }
+    led_write(LED_3, 0);
   }
 }
 
@@ -82,7 +86,7 @@ static void freebuf(FAR char *buf)
 
 static int outnmea(FAR char *buf)
 {
-  int ret;
+  int ret = 0;
   if (fp != NULL){
     ret = fputs(buf, fp);
     printf("%s", buf);

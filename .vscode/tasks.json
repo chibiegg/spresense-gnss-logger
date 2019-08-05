@@ -1,0 +1,63 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Spresense: build",
+            "type": "shell",
+            "command": ".vscode/build.sh",
+            "options": {
+                "env": {
+                    "SDK_PATH": "${config:spresense.sdk.path}",
+                    "ISAPPFOLDER": "true"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Spresense: build and flash",
+            "type": "shell",
+            "dependsOn": [
+                "Spresense: build"
+            ],
+            "command": ".vscode/flash.sh flash",
+            "options": {
+                "env": {
+                    "SDK_PATH": "${config:spresense.sdk.path}",
+                    "PORT": "${config:spresense.serial.port}",
+                    "ISAPPFOLDER": "true"
+                }
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Spresense: clean flash",
+            "type": "shell",
+            "command": ".vscode/flash.sh clean",
+            "options": {
+                "env": {
+                    "SDK_PATH": "${config:spresense.sdk.path}",
+                    "PORT": "${config:spresense.serial.port}"
+                }
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}

@@ -10,17 +10,12 @@
 #include <fcntl.h>
 #include <mqueue.h>
 #include <string.h>
-#include <arch/board/board.h>
-#include <arch/chip/pin.h>
 #include "gpsutils/cxd56_gnss_nmea.h"
 #include "gnss.h"
 #include "log.h"
+#include "led.h"
 
 #define MY_GNSS_SIG 18
-#define LED_0 PIN_I2S1_DATA_OUT
-#define LED_1 PIN_I2S1_DATA_IN
-#define LED_2 PIN_I2S1_LRCK
-#define LED_3 PIN_I2S1_BCK
 
 // GNSS
 int gnss_fd;
@@ -37,11 +32,6 @@ void gnss_init(){
   }
 
   ioctl(gnss_fd, CXD56_GNSS_IOCTL_STOP, 0);
-
-  board_gpio_config(LED_0, 0, false, true, 0);
-  board_gpio_config(LED_1, 0, false, true, 0);
-  board_gpio_config(LED_2, 0, false, true, 0);
-  board_gpio_config(LED_3, 0, false, true, 0);
 
   log_init();
 }
@@ -84,13 +74,13 @@ void gnss_loop(){
 
     if (gnss_read(gnss_fd) == 0){
       log_write(&posdat);
-      board_gpio_write(LED_0, 1);
+      led_write(LED_0, 1);
       usleep(1000*20);
-      board_gpio_write(LED_0, 0);
+      led_write(LED_0, 0);
       if (posdat.receiver.pos_fixmode > 1){
-        board_gpio_write(LED_1, 1);
+        led_write(LED_1, 1);
       }else{
-        board_gpio_write(LED_1, 0);
+        led_write(LED_1, 0);
       }
     }else{
 

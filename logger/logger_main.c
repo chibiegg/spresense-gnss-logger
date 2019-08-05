@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/boardctl.h>
 #include "gnss.h"
+#include "led.h"
 
 static void *gnss_loop_task(void *arg);
 
@@ -19,6 +20,7 @@ int logger_main(int argc, char *argv[])
   pthread_t thread_gnss;
 
   printf("GNSS Logger\n");
+  led_init();
   gnss_init();
 
   pthread_create(&thread_gnss, NULL, gnss_loop_task, NULL);

@@ -57,10 +57,10 @@ ifneq ($(CONFIG_BUILD_KERNEL),y)
 endif
 
 ifeq ($(WINTOOL),y)
-  BIN = "${shell cygpath -w $(APPDIR)$(DELIM)libgnsslogger$(LIBEXT)}"
+  BIN = "${shell cygpath -w $(APPDIR)$(DELIM)libuserapps$(LIBEXT)}"
   INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
 else
-  BIN = $(APPDIR)$(DELIM)libgnsslogger$(LIBEXT)
+  BIN = $(APPDIR)$(DELIM)libuserapps$(LIBEXT)
   INSTALL_DIR = $(BIN_DIR)
 endif
 
@@ -69,7 +69,7 @@ VPATH +=
 
 all: .built
 .PHONY: clean preconfig depend distclean
-.PRECIOUS: $(APPDIR)/libgnsslogger$(LIBEXT)
+.PRECIOUS: $(APPDIR)/libuserapps$(LIBEXT)
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
@@ -88,7 +88,6 @@ $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
 endif
 
-CFLAGS += -std=c99
 .built: $(OBJS)
 	$(Q) touch $@
 

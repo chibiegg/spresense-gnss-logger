@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "configurations": [
+        {
+            "name": "Spresense: Main core debug",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "cwd": "${workspaceFolder}",
+            "executable": "${workspaceFolder}/out/${workspaceFolderBasename}.nuttx",
+            "device": "CXD5602",
+            "preLaunchTask": "Spresense: clean flash",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "${config:spresense.sdk.path}/sdk/tools/cxd5602.cfg"
+            ],
+            "svdFile": "${config:spresense.sdk.path}/sdk/tools/SVD/cxd5602.svd"
+        }
+    ]
+}

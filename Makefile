@@ -33,8 +33,8 @@
 #
 ############################################################################
 
-MENUDESC = "GNSS Logger"
+MENUDESC = "User application"
 
-BIN = libgnsslogger$(LIBEXT)
+BIN = libuserapps$(LIBEXT)
 
 include $(SDKDIR)/Makefile.ext

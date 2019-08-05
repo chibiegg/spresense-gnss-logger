@@ -1,1 +1,0 @@
-# spresense-gnss-logger
