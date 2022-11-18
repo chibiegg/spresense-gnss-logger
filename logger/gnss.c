@@ -28,6 +28,7 @@ static struct cxd56_gnss_positiondata_s posdat;
 int64_t last_backup = -1;
 static int gnss_setparams(int fd);
 static int gnss_read(int fd);
+static struct cxd56_gnss_dcreport_data_s *gnss_get_dcreport(void);
 
 void gnss_init(){
   gnss_fd = open("/dev/gps", O_RDONLY);
@@ -45,6 +46,39 @@ void gnss_init(){
   board_gpio_config(LED_3, 0, false, true, 0);
 
   log_init();
+}
+
+static struct cxd56_gnss_dcreport_data_s *gnss_get_dcreport(void) {
+  int ret = 0;
+  static struct cxd56_gnss_dcreport_data_s s_dcreport = {0};
+  struct cxd56_gnss_dcreport_data_s dcreport;
+
+  ret = lseek(gnss_fd, CXD56_GNSS_READ_OFFSET_DCREPORT, SEEK_SET);
+  if (ret < 0)
+  {
+      return NULL;
+  }
+
+  ret = read(gnss_fd, &dcreport, sizeof(dcreport));
+  if (ret < 0)
+  {
+      return NULL;
+  }
+
+  if (dcreport.svid == 0)
+  {
+      /* invalid data */
+      return NULL;
+  }
+
+  if (0 == memcmp(&s_dcreport, &dcreport, sizeof(dcreport)))
+  {
+      /* not updated */
+      return NULL;
+  }
+
+  memcpy(&s_dcreport, &dcreport, sizeof(dcreport));
+  return &s_dcreport;
 }
 
 void gnss_loop(){
@@ -85,6 +119,12 @@ void gnss_loop(){
 
     if (gnss_read(gnss_fd) == 0){
       log_write(&posdat);
+
+      struct cxd56_gnss_dcreport_data_s *dcreportp = gnss_get_dcreport();
+      if (dcreportp != NULL) {
+        log_dcreport_write(dcreportp);
+      }
+
       board_gpio_write(LED_0, 1);
       usleep(1000*20);
       board_gpio_write(LED_0, 0);
@@ -92,7 +132,7 @@ void gnss_loop(){
         board_gpio_write(LED_1, 1);
 
         // save backup
-        if (last_backup<0 || (posdat.data_timestamp-last_backup) > CONFIG_GNSSLOGGER_LOGGER_SAVE_BACKUP_DATA_INTERVAL*1000) {
+        if (last_backup<0 || (posdat.data_timestamp-last_backup) > CONFIG_GNSSLOGGER_LOGGER_SAVE_BACKUP_DATA_INTERVAL*10000) {
           ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_SAVE_BACKUP_DATA, 0);
           if (ret < OK)
           {
@@ -133,7 +173,7 @@ static int gnss_setparams(int fd)
   }
 
   /* Set the type of satellite system used by GNSS. */
-  set_satellite = CXD56_GNSS_SAT_GPS | CXD56_GNSS_SAT_SBAS | CXD56_GNSS_SAT_QZ_L1CA | CXD56_GNSS_SAT_QZ_L1S;
+  set_satellite = CXD56_GNSS_SAT_GPS | CXD56_GNSS_SAT_QZ_L1CA | CXD56_GNSS_SAT_QZ_L1S;
 
   ret = ioctl(fd, CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM, set_satellite);
   if (ret < 0)
