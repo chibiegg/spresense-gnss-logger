@@ -34,4 +34,8 @@ config GNSSLOGGER_LOGGER_OUTPUT_SERIAL
 	---help---
 		Enable output nmea to SD
 
+config GNSSLOGGER_LOGGER_SAVE_BACKUP_DATA_INTERVAL
+	int "GNSS Backup interval in seconds"
+	default 3600
+
 endif

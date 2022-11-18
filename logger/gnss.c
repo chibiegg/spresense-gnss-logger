@@ -25,6 +25,7 @@
 // GNSS
 int gnss_fd;
 static struct cxd56_gnss_positiondata_s posdat;
+int64_t last_backup = -1;
 static int gnss_setparams(int fd);
 static int gnss_read(int fd);
 
@@ -32,7 +33,7 @@ void gnss_init(){
   gnss_fd = open("/dev/gps", O_RDONLY);
   if (gnss_fd < 0)
   {
-    printf("open error:%d,%d\n", gnss_fd, errno);
+    printf("$GPLOG,open error:%d,%d\n", gnss_fd, errno);
     return;
   }
 
@@ -66,7 +67,7 @@ void gnss_loop(){
   ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_SIGNAL_SET, (unsigned long)&setting);
   if (ret < 0)
   {
-    printf("ioctl(CXD56_GNSS_IOCTL_SIGNAL_SET) NG!! %d\n", ret);
+    printf("$GPLOG,ioctl(CXD56_GNSS_IOCTL_SIGNAL_SET) NG!! %d\n", ret);
     return;
   }
 
@@ -78,7 +79,7 @@ void gnss_loop(){
     ret = sigwaitinfo(&mask, NULL);
     if (ret != MY_GNSS_SIG)
     {
-      printf("sigwaitinfo error %d\n", ret);
+      printf("$GPLOG,sigwaitinfo error %d\n", ret);
       break;
     }
 
@@ -89,6 +90,19 @@ void gnss_loop(){
       board_gpio_write(LED_0, 0);
       if (posdat.receiver.pos_fixmode > 1){
         board_gpio_write(LED_1, 1);
+
+        // save backup
+        if (last_backup<0 || (posdat.data_timestamp-last_backup) > CONFIG_GNSSLOGGER_LOGGER_SAVE_BACKUP_DATA_INTERVAL*1000) {
+          ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_SAVE_BACKUP_DATA, 0);
+          if (ret < OK)
+          {
+            printf("$GPLOG,Failed to save BackupData\n");
+          }else{
+            printf("$GPLOG,BackupData saved\n");
+          }
+          last_backup = posdat.data_timestamp;
+        }
+
       }else{
         board_gpio_write(LED_1, 0);
       }
@@ -124,15 +138,15 @@ static int gnss_setparams(int fd)
   ret = ioctl(fd, CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM, set_satellite);
   if (ret < 0)
   {
-    printf("ioctl(CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM) NG!! %d\n", ret);
+    printf("$GPLOG,ioctl(CXD56_GNSS_IOCTL_SELECT_SATELLITE_SYSTEM) NG!! %d\n", ret);
     return ret;
   }
 
   /* Start GNSS. */
-  ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_START, CXD56_GNSS_STMOD_COLD);
+  ret = ioctl(gnss_fd, CXD56_GNSS_IOCTL_START, CXD56_GNSS_STMOD_WARM);
   if (ret < 0)
   {
-    printf("ioctl(CXD56_GNSS_IOCTL_START) NG!! %d\n", ret);
+    printf("$GPLOG,ioctl(CXD56_GNSS_IOCTL_START) NG!! %d\n", ret);
     return ret;
   }
 
@@ -146,12 +160,12 @@ static int gnss_read(int fd){
   ret = read(fd, &posdat, sizeof(posdat));
   if (ret < 0)
   {
-    printf("read error\n");
+    printf("$GPLOG,read error\n");
     return ret;
   }
   else if (ret != sizeof(posdat))
   {
-    printf("read size error\n");
+    printf("$GPLOG,read size error\n");
     return -1;
   }
 

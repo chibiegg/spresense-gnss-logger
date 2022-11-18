@@ -18,15 +18,16 @@ int main(int argc, FAR char *argv[])
   printf("$GPLOG,GNSS Logger\n");
 
 #if CONFIG_GNSSLOGGER_LOGGER_OUTPUT_SERIAL
-  printf("Output serial: Enabled\n");
+  printf("$GPLOG,Output serial: Enabled\n");
 #else
   printf("$GPLOG,Output serial: Disabled\n");
 #endif
 #if CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
-  printf("Save file: Enabled\n");
+  printf("$GPLOG,Save file: Enabled\n");
 #else
   printf("$GPLOG,Save file: Disabled\n");
 #endif
+  printf("$GPLOG,Backup interval: %d sec\n", CONFIG_GNSSLOGGER_LOGGER_SAVE_BACKUP_DATA_INTERVAL);
 
 
   gnss_init();
