@@ -1,6 +1,6 @@
 
 config GNSSLOGGER_LOGGER
-	bool "Logger Application"
+	tristate "GNSS SD Card Logger"
 	default y
 	---help---
 		Enable the logger app
@@ -10,7 +10,6 @@ if GNSSLOGGER_LOGGER
 config GNSSLOGGER_LOGGER_PROGNAME
 	string "Program name"
 	default "logger"
-	depends on BUILD_KERNEL
 	---help---
 		This is the name of the program that will be use when the NSH ELF
 		program is installed.

@@ -33,8 +33,6 @@
 #
 ############################################################################
 
-MENUDESC = "GNSS Logger"
+MENUDESC = "chibiegg GNSS Logger"
 
-BIN = libgnsslogger$(LIBEXT)
-
-include $(SDKDIR)/Makefile.ext
+include $(SDKDIR)/tools/Sdk.mk
