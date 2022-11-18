@@ -1,4 +1,4 @@
 
-ifeq ($(CONFIG_GNSSLOGGER_LOGGER),y)
+ifneq ($(CONFIG_GNSSLOGGER_LOGGER),)
 CONFIGURED_APPS += logger
 endif

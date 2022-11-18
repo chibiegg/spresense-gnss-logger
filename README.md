@@ -5,11 +5,9 @@
 ### Requrements
 
 * Git
-* Docker
-* Python
-* kconfig-frontends
+* Spresense SDK
 
-Refer "[macOSでSPRESENSE SDKを使った開発環境を用意する](https://qiita.com/chibiegg/items/11836bb5cef8bf314103)" .
+Refer "[Spresense SDK スタートガイド (CLI 版)](https://developer.sony.com/develop/spresense/docs/sdk_set_up_ja.html)" .
 
 ### Checkout repositories
 
@@ -23,18 +21,17 @@ git clone https://github.com/chibiegg/spresense-gnss-logger.git gnsslogger
 
 ```bash
 cd sdk # spresense/sdk/
-cp -r ../gnsslogger/configs configs/gnsslogger
-tools/config.py --kernel release
-tools/config.py gnsslogger/logger
+source ~/spresenseenv/setup
+./tools/config.py -d ../gnsslogger autostart
 ```
 
 ### Build
 
+In `spresense/sdk/` .
+
 ```bash
-cd ../ # spresense/
-source ./spresense_env.sh
-spresense make -j8 buildkernel
-spresense make -j8
+source ~/spresenseenv/setup
+make -j8
 ```
 
 ### Flash
