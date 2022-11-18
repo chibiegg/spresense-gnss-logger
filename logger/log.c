@@ -34,6 +34,12 @@ void log_open(char *filename){
   }
 }
 
+void log_dcreport_write(struct cxd56_gnss_dcreport_data_s *dcreportp) {
+  if (dcreportp != NULL) {
+    NMEA_DcReport_Output(dcreportp);
+  }
+}
+
 
 void log_write(struct cxd56_gnss_positiondata_s *posdatp){
 
