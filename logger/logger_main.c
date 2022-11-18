@@ -15,7 +15,20 @@ int main(int argc, FAR char *argv[])
 {
   pthread_t thread_gnss;
 
-  printf("GNSS Logger\n");
+  printf("$GPLOG,GNSS Logger\n");
+
+#if CONFIG_GNSSLOGGER_LOGGER_OUTPUT_SERIAL
+  printf("Output serial: Enabled\n");
+#else
+  printf("$GPLOG,Output serial: Disabled\n");
+#endif
+#if CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
+  printf("Save file: Enabled\n");
+#else
+  printf("$GPLOG,Save file: Disabled\n");
+#endif
+
+
   gnss_init();
 
   pthread_create(&thread_gnss, NULL, gnss_loop_task, NULL);

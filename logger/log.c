@@ -17,7 +17,6 @@ static int outbin(FAR char *buf, uint32_t len);
 
 
 void log_init(){
-
   NMEA_InitMask();
   NMEA_SetMask(0x000040ff);
   funcs.bufReq  = reqbuf;
@@ -28,10 +27,10 @@ void log_init(){
 }
 
 void log_open(char *filename){
-  printf("Open %s\n", filename);
+  printf("$GPLOG,Open %s\n", filename);
   fp = fopen(filename, "a");
   if (fp == NULL) {
-    printf("Open error %s\n", filename);
+    printf("$GPLOG,Open error %s\n", filename);
   }
 }
 
@@ -39,10 +38,13 @@ void log_open(char *filename){
 void log_write(struct cxd56_gnss_positiondata_s *posdatp){
 
   printf(
-    "%04d/%02d/%02d %02d:%02d:%02d\n",
+    "$GPLOG,%04d/%02d/%02d %02d:%02d:%02d\n",
     posdatp->receiver.date.year, posdatp->receiver.date.month, posdatp->receiver.date.day,
     posdatp->receiver.time.hour, posdatp->receiver.time.minute, posdatp->receiver.time.sec
   );
+
+
+#if CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
   if (fp==NULL && posdatp->receiver.date.year>2000) {
     sprintf(
       current_filename, "/mnt/sd0/%04d%02d%02d-%02d%02d%02d.nmea",
@@ -51,7 +53,11 @@ void log_write(struct cxd56_gnss_positiondata_s *posdatp){
     );
     log_open(current_filename);
   }
+#endif // CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
+
   NMEA_Output(posdatp);
+
+#if CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
   if (fp!=NULL) {
     if(posdatp->receiver.time.sec == 59){
       fflush(fp);
@@ -63,6 +69,8 @@ void log_write(struct cxd56_gnss_positiondata_s *posdatp){
       fp = NULL;
     }
   }
+#endif // CONFIG_GNSSLOGGER_LOGGER_SAVEFILE
+
 }
 
 /* output NMEA */
@@ -70,7 +78,7 @@ FAR static char *reqbuf(uint16_t size)
 {
   if (size > sizeof(nmea_buf))
     {
-      printf("reqbuf error: oversize %s\n", size);
+      printf("$GPLOG,reqbuf error: oversize %d bytes\n", size);
       return NULL;
     }
   return nmea_buf;
@@ -82,11 +90,15 @@ static void freebuf(FAR char *buf)
 
 static int outnmea(FAR char *buf)
 {
-  int ret;
+  int ret = 0;
   if (fp != NULL){
     ret = fputs(buf, fp);
-    printf("%s", buf);
   }
+
+#if CONFIG_GNSSLOGGER_LOGGER_OUTPUT_SERIAL
+  printf("%s", buf);
+#endif
+
   return ret;
 }
 
