@@ -22,4 +22,16 @@ config GNSSLOGGER_LOGGER_STACKSIZE
 	int "logger stack size"
 	default 2048
 
+config GNSSLOGGER_LOGGER_SAVEFILE
+	bool "Save NMEA file"
+	default y
+	---help---
+		Enable saving nmea file to SD
+
+config GNSSLOGGER_LOGGER_OUTPUT_SERIAL
+	bool "Output NMEA to serial"
+	default y
+	---help---
+		Enable output nmea to SD
+
 endif
